@@ -1,0 +1,60 @@
+# 1. Distributed web infrastructure
+
+Whiteboard screenshot: https://imgur.com/a/zCcaQZ1
+
+## Why add each element
+
+- **HAProxy:** distribute traffic across servers and fail over.
+- **2 web/app servers:** remove SPOF, add capacity and resilience.
+- **MySQL Primary-Replica:** scale reads and protect writes.
+
+## Load balancer algorithm
+
+- **Round-robin:** sends each new request to next backend in order.
+- **Leastconn (alt):** sends to server with fewest active connections.
+- Both need health checks to skip unhealthy backends.
+
+## Active-Active vs Active-Passive
+
+- **Active-Active:** both backends serve traffic simultaneously.
+- **Active-Passive:** one serves, the other waits to take over.
+- Our HAProxy setup is **Active-Active** for web/app tier.
+
+## DB Primary-Replica (Master-Slave)
+
+- **Primary:** handles all writes; streams binlog to replicas.
+- **Replica:** applies changes from primary; used for read queries.
+- If primary fails, promote a replica to primary (manual or managed).
+
+## App view: Primary vs Replica
+
+- **Primary:** target for writes/updates/transactions.
+- **Replica:** target for reads, analytics, heavy SELECT traffic.
+- App must route writes to primary and reads to replicas.
+
+## Security issues (by design in this diagram)
+
+- No firewalls around LB and servers (open attack surface).
+- No forced HTTPS termination/passthrough configuration shown.
+- No secrets management (DB creds in plain files, risk).
+- No WAF/rate limits/DoS protections shown.
+
+## SPOF (Single Points Of Failure)
+
+- **HAProxy** is a SPOF (single LB). Need a second LB + VRRP/keepalived.
+- **MySQL Primary** is a SPOF for writes. Need failover/promotion plan.
+- **DNS** provider or config could be a SPOF if not redundant.
+
+## No monitoring (issues)
+
+- No metrics/logs/alerts. Cannot detect failures early.
+- Add Prometheus/Alertmanager or Datadog, plus log centralization.
+- Track CPU/RAM/disk, QPS, latency, 5xx rates, MySQL replication lag.
+
+## Notes
+
+- Ensure identical app files on both servers (CI/CD or shared artifact).
+- Session handling: use stateless sessions or shared store (Redis).
+- Set health checks in HAProxy and remove unhealthy backends quickly.
+- Keep DB backups and test restore/replica promotion procedures.
+

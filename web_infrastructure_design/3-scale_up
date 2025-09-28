@@ -1,0 +1,52 @@
+# 3. Scale up
+
+Whiteboard screenshot: https://imgur.com/a/CbKWJ4X
+
+## Why each additional element
+
+- **Second Load Balancer (clustered HAProxy):**  
+  Removes the SPOF of having a single LB.  
+  Active-Active so both LBs serve traffic.
+
+- **Web tier separated (Nginx only):**  
+  Dedicated servers for static content, reverse proxy, TLS termination.  
+  Easier to scale horizontally.
+
+- **Application server on its own node:**  
+  Separates business logic from web serving.  
+  Allows tuning resources specifically for app workloads.
+
+- **Dedicated Database server (MySQL):**  
+  Isolates storage and query handling.  
+  Prevents DB contention with app/web processes.
+
+---
+
+## Application server vs Web server
+
+- **Web server (Nginx/Apache):**  
+  - Handles HTTP requests from clients.  
+  - Serves static assets (CSS, JS, images).  
+  - Can reverse proxy to the application server.  
+
+- **Application server (Gunicorn, PHP-FPM, uWSGI, etc.):**  
+  - Executes business logic and dynamic requests.  
+  - Processes codebase (Python, PHP, Ruby, etc.).  
+  - Communicates with the database to build responses.  
+
+---
+
+## Issues solved by this design
+
+- **LB cluster:** no single point of failure in entry point.  
+- **Split roles:** web, app, and DB separated. Easier scaling and isolation.  
+- **Resource allocation:** each tier can be scaled independently.  
+
+---
+
+## Remaining considerations
+
+- Still one DB (MySQL) → SPOF for writes.  
+- Add replicas or clustering for HA.  
+- Monitoring, firewalls, and HTTPS should also be enforced  
+  (covered in previous tasks).

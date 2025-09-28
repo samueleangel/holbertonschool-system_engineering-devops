@@ -1,0 +1,60 @@
+# 2. Secured and monitored web infrastructure
+
+Whiteboard screenshot: https://imgur.com/a/fFdIK8o
+
+## Why each additional element
+
+- **FW#1 (perimeter):** filter public traffic to the LB only.
+- **FW#2 (intra-tier):** allow LB->web/app only on needed ports.
+- **FW#3 (DB boundary):** allow SQL only from app servers.
+- **TLS cert at LB:** serve HTTPS and offload TLS.
+- **3 monitoring agents:** collect metrics/logs on each server.
+
+## What are firewalls for
+
+- Enforce least-privilege network access by IP/port/protocol.
+- Reduce attack surface and lateral movement risk.
+
+## Why HTTPS
+
+- Encrypts traffic end to end (confidentiality and integrity).
+- Protects cookies, credentials, and PII.
+- Avoids MITM and meets compliance expectations.
+
+## What monitoring is for
+
+- Observe availability, latency, errors, and resource usage.
+- Detect incidents early and enable alerting and capacity planning.
+
+## How data is collected
+
+- Host agents send metrics/logs to a SaaS (e.g., Sumo Logic/Datadog).
+- Examples: CPU/RAM/disk, Nginx/HAProxy logs, MySQL stats.
+- Pull model alt: Prometheus scrapes exporters on each host.
+
+## How to monitor web server QPS
+
+- Expose Nginx `stub_status` or parse access logs.
+- Count requests per time window and push as a metric.
+- Or use HAProxy stats exporter for frontend/backend QPS.
+
+## Issues with this infrastructure
+
+- **SSL terminated at LB:** backend hops may be in clear text.
+  - Fix: re-encrypt to backends (TLS passthrough or mTLS).
+- **Single MySQL writer:** SPOF and write bottleneck.
+  - Fix: failover tooling, or multi-primary (e.g., InnoDB Cluster).
+- **Same components on all hosts:** bigger blast radius, noisy neighbor.
+  - Fix: clear separation of roles or stronger isolation (VMs/ASGs).
+
+## Notes and ports (example)
+
+- Open 443 on FW#1 to LB public IP; close 80 or redirect to 443.
+- Allow LB->web/app 80/443 on FW#2 as required.
+- Allow 3306 only Server2<->Server3 on FW#3 for SQL/replication.
+- Agents: allow egress 443 to monitoring SaaS endpoints.
+
+## LB algorithm and HA style (recap)
+
+- Use **leastconn** or **round-robin** with health checks.
+- Active-Active across Server 2 and Server 3.
