@@ -1,0 +1,12 @@
+# 0. Simple web stack
+
+Diagram:
+
+Explanation:
+- User requests www.foobar.com
+- DNS resolves to 8.8.8.8 (A record)
+- Server hosts Nginx, app server, code, and MySQL
+- Communication is via HTTP/HTTPS over TCP
+- SPOF: one server only
+- Maintenance requires downtime
+- Cannot scale traffic
